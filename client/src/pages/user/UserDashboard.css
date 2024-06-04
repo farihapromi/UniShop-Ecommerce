@@ -1,0 +1,35 @@
+/* AdminDashboard.css */
+
+.container-fluid {
+    /* background-color: #f8f9fa; */
+}
+
+.card {
+    padding: 20px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+.card-header {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+.table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+.table th,
+.table td {
+    padding: 12px 15px;
+    /* border: 1px solid #ddd; */
+    text-align: left;
+}
+
+/* Prevent table row hover color change */
+.table tr:hover {
+    background-color: inherit; /* or specify the desired background color */
+}

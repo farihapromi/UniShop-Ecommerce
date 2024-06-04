@@ -1,0 +1,91 @@
+/* Ensure the footer has a solid background */
+.pg-footer {
+  /* background-color: #15afd5;  */
+  padding: 20px 0;
+  color: #fff;
+}
+/* 
+/* .footer {
+  background-color: #15afd5; 
+  padding: 20px 0;
+  color: #fff;
+} */ 
+
+.footer-wave-svg {
+  width: 100%;
+  height: 100px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.footer-content-column {
+  flex: 1;
+  margin: 10px;
+  min-width: 200px;
+}
+
+.footer-logo-link h1 {
+  margin: 0;
+}
+
+.footer-menu-name {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.footer-menu-list {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-menu-list .menu-item {
+  margin: 5px 0;
+}
+
+.footer-call-to-action {
+  margin: 20px 0;
+}
+
+.footer-call-to-action-title {
+  font-weight: bold;
+}
+
+.footer-call-to-action-button {
+  background-color: #fff;
+  color: #15afd5;
+  padding: 10px 20px;
+  text-decoration: none;
+  border-radius: 5px;
+}
+
+.footer-call-to-action-link-wrapper a {
+  color: #fff;
+  text-decoration: none;
+}
+
+.payment-methods-list {
+  display: flex;
+  justify-content: space-around;
+  list-style: none;
+  padding: 0;
+  margin: 20px 0 0;
+}
+
+.payment-methods-list li {
+  margin: 0 10px;
+}
+
+.payment-methods-list img {
+  max-width: 50px;
+  height: auto;
+}
+
+.text-center {
+  text-align: center;
+  color: #fff;
+}

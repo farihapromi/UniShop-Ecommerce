@@ -1,0 +1,13 @@
+/* AdminMenu.css */
+
+.admin-panel {
+    color: black;
+    font-weight: bold;
+  }
+  
+  .list-group-item.active {
+    background-color: #007bff; /* Primary color */
+    border-color: #007bff;
+    color: white;
+  }
+  
