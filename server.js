@@ -32,14 +32,10 @@ app.use("/api/v1/products", productRoutes);
 if (process.env.NODE_ENV === "production") {
   const __dirname = path.resolve(); // Get current directory
 
-  app.use(
-    express.static(path.join(__dirname, "project", "src", "client", "build"))
-  );
+  app.use(express.static(path.join(__dirname, "client", "build")));
 
   app.get("*", (req, res) => {
-    res.sendFile(
-      path.resolve(__dirname, "project", "src", "client", "build", "index.html")
-    );
+    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
   });
 }
 
