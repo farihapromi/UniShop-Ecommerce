@@ -3,8 +3,7 @@ import Layout from "./../../components/Layout/Layout";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-// import "../../styles/AuthStyles.css";
-import "../../styles/AuthStyles.css";
+import { useAuth } from "../../context/auth";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -12,10 +11,9 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
-  const [answer, setAnswer] = useState("");
   const navigate = useNavigate();
+  const [auth, setAuth] = useAuth();
 
-  // form function
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -27,8 +25,17 @@ const Register = () => {
         address,
       });
       if (res && res.data.success) {
-        toast.success(res.data && res.data.message);
-        navigate("/");
+        toast.success(res.data.message);
+
+        // Update the authentication state with the registered user information
+        const newAuth = {
+          user: res.data.user,
+          token: res.data.token,
+        };
+        setAuth(newAuth);
+        localStorage.setItem("auth", JSON.stringify(newAuth));
+
+        navigate("/login");
       } else {
         toast.error(res.data.message);
       }
@@ -39,7 +46,7 @@ const Register = () => {
   };
 
   return (
-    <Layout title="Register  Ecommerce App">
+    <Layout title="Register Ecommerce App">
       <div className="form-container" style={{ minHeight: "90vh" }}>
         <form onSubmit={handleSubmit}>
           <h4 className="title">REGISTER FORM</h4>
