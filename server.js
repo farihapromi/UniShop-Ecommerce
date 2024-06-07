@@ -16,7 +16,6 @@ connectDB();
 
 //rest object
 const app = express();
-app.use(cors());
 
 //middelwares
 app.use(cors());
@@ -27,11 +26,23 @@ app.use(morgan("dev"));
 app.use("/api/v1/auth", authRoute);
 app.use("/api/v1/category", categoryRoute);
 app.use("/api/v1/products", productRoutes);
+///// Serve static assets if in production
+if (process.env.NODE_ENV === "production") {
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+
+  app.use(express.static(path.join(__dirname, "client", "build")));
+
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
+  });
+}
 
 //rest api
 app.get("/", (req, res) => {
   res.send("<h1>Welcome to first Mern</h1>");
 });
+
 const PORT = process.env.PORT || 8000;
 //run listen
 app.listen(PORT, () => {
