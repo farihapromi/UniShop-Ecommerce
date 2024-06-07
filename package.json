@@ -4,10 +4,14 @@
   "description": "",
   "main": "server.js",
   "type": "module",
- "scripts": {
-  "build": "cd client && npm install && npm run build && cd ..",
-  "start": "npm install && node server.js"
-},
+  "scripts": {
+    "start": "node server.js",
+    "server": "nodemon server.js",
+    
+    "client": "npm start --prefix ./client",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "build": "npm run build --prefix ./client"
+  },
 
   "keywords": [],
   "author": "",
