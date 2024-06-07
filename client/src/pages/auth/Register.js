@@ -28,12 +28,6 @@ const Register = () => {
         toast.success(res.data.message);
 
         // Update the authentication state with the registered user information
-        const newAuth = {
-          user: res.data.user,
-          token: res.data.token,
-        };
-        setAuth(newAuth);
-        localStorage.setItem("auth", JSON.stringify(newAuth));
 
         navigate("/login");
       } else {
