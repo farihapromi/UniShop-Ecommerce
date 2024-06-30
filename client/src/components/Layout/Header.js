@@ -13,6 +13,7 @@ const Header = () => {
   const [auth, setAuth] = useAuth();
   const categories = useCategory();
   const [cart] = useCart();
+  // const { cart } = useCart();
   const handleLogout = () => {
     setAuth({
       ...auth,
@@ -23,8 +24,8 @@ const Header = () => {
   };
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-light bg-light">
-        <div className="container-fluid">
+      <nav className="navbar navbar-expand-lg navbar-light bg-light sticky-header ">
+        <div className="container-fluid my-nav">
           <button
             className="navbar-toggler"
             type="button"
@@ -36,7 +37,7 @@ const Header = () => {
           >
             <span className="navbar-toggler-icon" />
           </button>
-          <div className="collapse navbar-collapse" id="navbarTogglerDemo01">
+          <div className="collapse navbar-collapse " id="navbarTogglerDemo01">
             <Link to="/" className="navbar-brand" href="#">
               {" "}
               <FaShoppingCart /> <span className="name">Uni Shop</span>

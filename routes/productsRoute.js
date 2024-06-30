@@ -1,4 +1,5 @@
 import express from "express";
+
 import { requireSignIn, isAdmin } from "../middlewares/authMiddleware.js";
 import {
   createProductController,
@@ -64,8 +65,10 @@ router.get("/product-category/:slug", prodcuctCategoryController);
 //token
 router.get("/braintree/token", braintreeTokenController);
 //payment
-router.post("/braintree/payment", requireSignIn, brainTreePaymentController);
+// router.post("/braintree/payment", requireSignIn, brainTreePaymentController);
 
+// Route for handling Braintree payment
+router.post("/braintree/payment", requireSignIn, brainTreePaymentController);
 //rewards
 
 import {
@@ -79,5 +82,8 @@ router.post("/redeem", redeemRewardController);
 
 router.post("/add-review", requireSignIn, addReviewController);
 router.get("/reviews/:productId", getReviewsController);
+
+//newly added
+// Get products within user's coin value
 
 export default router;

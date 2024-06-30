@@ -245,7 +245,8 @@ export const getOrdersController = async (req, res) => {
     const orders = await orderModel
       .find({ buyer: req.user._id })
       .populate("products", "-photo")
-      .populate("buyer", "name");
+      .populate("buyer", "name")
+      .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
     console.log(error);
@@ -298,6 +299,45 @@ export const orderStatusController = async (req, res) => {
 };
 //coins
 
+// export const getUsersWithOrdersController = async (req, res) => {
+//   try {
+//     const users = await userModel.find({ role: 0 }).lean(); // Fetch all users except admins
+//     const userIds = users.map((user) => user._id);
+
+//     const orders = await orderModel
+//       .find({ buyer: { $in: userIds } })
+//       .populate("buyer", "name email address phone membershipId")
+//       .lean();
+
+//     const usersWithOrders = users.map((user) => {
+//       const userOrders = orders.filter(
+//         (order) => order.buyer._id.toString() === user._id.toString()
+//       );
+
+//       // Calculate total spent by the user
+//       const totalSpent = userOrders.reduce(
+//         (acc, order) => acc + order.payment.amount,
+//         0
+//       );
+
+//       // Calculate coins based on total spent
+//       const totalCoins = Math.floor(totalSpent / 1000) * 10;
+
+//       return { ...user, coins: totalCoins };
+//     });
+
+//     res.json(usersWithOrders);
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send({
+//       success: false,
+//       message: "Error fetching users with orders",
+//       error,
+//     });
+//   }
+// };
+
+//aded for reseting coins
 export const getUsersWithOrdersController = async (req, res) => {
   try {
     const users = await userModel.find({ role: 0 }).lean(); // Fetch all users except admins
@@ -305,7 +345,7 @@ export const getUsersWithOrdersController = async (req, res) => {
 
     const orders = await orderModel
       .find({ buyer: { $in: userIds } })
-      .populate("buyer", "name email address phone membershipId")
+      .populate("buyer", "name email address phone membershipId coinsUsed")
       .lean();
 
     const usersWithOrders = users.map((user) => {
@@ -319,10 +359,10 @@ export const getUsersWithOrdersController = async (req, res) => {
         0
       );
 
-      // Calculate coins based on total spent
-      const totalCoins = Math.floor(totalSpent / 1000) * 10;
+      // Use the coins stored in the user document
+      const coins = user.coins;
 
-      return { ...user, coins: totalCoins };
+      return { ...user, totalSpent, coins };
     });
 
     res.json(usersWithOrders);
@@ -360,6 +400,10 @@ export const updateUserCoinsController = async (req, res) => {
       // Reset coins after notifying
       user.coins = 0;
     }
+    // Reset coins if they were used
+    if (useCoins) {
+      user.coins = 0;
+    }
 
     // Save updated user
     await user.save();
@@ -372,3 +416,106 @@ export const updateUserCoinsController = async (req, res) => {
       .json({ success: false, message: "Error updating coins", error });
   }
 };
+
+//nwly added for coinns using
+
+// export const getUserCoinsController = async (req, res) => {
+//   try {
+//     const user = await userModel.findById(req.user._id).lean();
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     const userOrders = await orderModel.find({ buyer: user._id }).lean();
+
+//     const totalSpent = userOrders.reduce(
+//       (acc, order) => acc + order.payment.amount,
+//       0
+//     );
+
+//     const totalCoins = Math.floor(totalSpent / 1000) * 10;
+
+//     res.json({ coins: totalCoins });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send({
+//       success: false,
+//       message: "Error fetching user coins",
+//       error,
+//     });
+//   }
+// };
+
+// added for newly created problem 30.06.2024
+export const getUserCoinsController = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.user._id).lean();
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Return the user's stored coins
+    res.json({ coins: user.coins });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error fetching user coins",
+      error,
+    });
+  }
+};
+
+// export const handlePaymentController = async (req, res) => {
+//   try {
+//     const { nonce, userId, paymentAmount, useCoins } = req.body;
+//     const user = await userModel.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     // Calculate total amount and coins deduction
+//     let finalAmount = paymentAmount;
+//     if (useCoins && user.coins >= 100) {
+//       finalAmount -= 100;
+//       user.coins -= 100;
+//     }
+
+//     // Perform payment processing with the final amount (using Braintree)
+//     const paymentResult = await gateway.transaction.sale({
+//       amount: finalAmount.toString(),
+//       paymentMethodNonce: nonce,
+//       options: {
+//         submitForSettlement: true,
+//       },
+//     });
+
+//     if (!paymentResult.success) {
+//       return res.status(500).json({ message: "Payment processing failed" });
+//     }
+
+//     // Save the order in the database
+//     const order = new orderModel({
+//       buyer: user._id,
+//       products: req.body.products,
+//       payment: {
+//         amount: finalAmount,
+//         transactionId: paymentResult.transaction.id,
+//       },
+//     });
+
+//     await order.save();
+
+//     // Calculate and update coins for the user
+//     const newCoins = Math.floor(finalAmount / 1000) * 10;
+//     user.coins += newCoins;
+//     await user.save();
+
+//     res
+//       .status(200)
+//       .json({ success: true, message: "Payment successful", user });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ success: false, message: "Payment failed", error });
+//   }
+// };

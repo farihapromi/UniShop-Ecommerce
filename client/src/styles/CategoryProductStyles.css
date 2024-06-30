@@ -2,8 +2,9 @@
     flex-wrap: wrap;
     margin-top: 80px !important;
   }
+  
   .category .card {
-    background-color: rgba(128, 128, 128, 0.097);
+    background-color: rgba(179, 18, 131, 0.097);
     width: 18rem;
   }
   .category .card-name-price {
@@ -45,5 +46,9 @@
  } */
  .category-name{
   color:orange;
+  font-weight: bolder;
+ }
+ .all-category{
+  color:black;
   font-weight: bolder;
  }

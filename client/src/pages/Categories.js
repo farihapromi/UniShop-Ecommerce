@@ -8,7 +8,8 @@ const Categories = () => {
   const categories = useCategory();
   return (
     <Layout title={"All Categories"}>
-      <div className="container" style={{ marginTop: "100px" }}>
+      <div className="container " style={{ marginTop: "100px" }}>
+        <h1 className="text-center all-category">All Categories</h1>
         <div className="row container category-bg">
           {categories.map((c) => (
             <div className="col-md-6 mt-3  mb-3 gx-3 gy-3 all-cat ">

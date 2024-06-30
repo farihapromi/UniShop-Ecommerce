@@ -4,51 +4,53 @@ import { useCart } from "../context/cart";
 import { useAuth } from "../context/auth";
 import { useNavigate } from "react-router-dom";
 import DropIn from "braintree-web-drop-in-react";
-import { AiFillWarning } from "react-icons/ai";
 import axios from "axios";
 import toast from "react-hot-toast";
 import "../styles/CartStyles.css";
 
 const CartPage = () => {
-  const [auth, setAuth] = useAuth();
+  const [auth] = useAuth();
   const [cart, setCart] = useCart();
   const [clientToken, setClientToken] = useState("");
   const [instance, setInstance] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userCoins, setUserCoins] = useState(0); // State for user's current coins
+  const [useCoins, setUseCoins] = useState(false); // State for using coins
   const navigate = useNavigate();
 
-  //total price
+  const calculateQuantity = (productId) => {
+    let quantity = 0;
+    cart.forEach((item) => {
+      if (item._id === productId) {
+        quantity++;
+      }
+    });
+    return quantity;
+  };
+
+  const uniqueProductIds = [...new Set(cart.map((item) => item._id))];
+
   const totalPrice = () => {
     try {
       let total = 0;
       cart?.map((item) => {
         total = total + item.price;
       });
-      // return total.toLocaleString("en-US", {
-      //   style: "currency",
-      //   currency: "USD",
-      // });
+
+      // Apply discount if user has enough coins
+      if (useCoins && userCoins >= 100) {
+        const discount = Math.min(userCoins, total); // Use all available coins but not more than the total price
+        total -= discount;
+        toast.success(
+          `You have used ${discount} coins to get a discount of $${discount}!`
+        );
+      }
       return total;
     } catch (error) {
       console.log(error);
     }
   };
 
-  // Calculate total amount spent
-  // const totalAmountSpent = () => {
-  //   try {
-  //     let total = 0;
-  //     cart?.map((item) => {
-  //       total = total + item.price * item.quantity; // Multiply price by quantity
-  //     });
-  //     return total;
-  //   } catch (error) {
-  //     console.log(error);
-  //     return 0;
-  //   }
-  // };
-
-  //detele item
   const removeCartItem = (pid) => {
     try {
       let myCart = [...cart];
@@ -61,7 +63,6 @@ const CartPage = () => {
     }
   };
 
-  //get payment gateway token
   const getToken = async () => {
     try {
       const { data } = await axios.get("/api/v1/products/braintree/token");
@@ -70,107 +71,153 @@ const CartPage = () => {
       console.log(error);
     }
   };
-  useEffect(() => {
-    getToken();
-  }, [auth?.token]);
 
-  //handle payments
+  const getUserCoins = async () => {
+    try {
+      const { data } = await axios.get("/api/v1/auth/user-coins");
+      setUserCoins(data.coins);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   // const handlePayment = async () => {
   //   try {
   //     setLoading(true);
   //     const { nonce } = await instance.requestPaymentMethod();
+  //     let totalAmount = cart.reduce((total, item) => total + item.price, 0);
+
+  //     // Apply discount if user wants to use coins
+  //     let coinsToUse = 0;
+  //     if (useCoins && userCoins >= 100) {
+  //       coinsToUse = Math.min(userCoins, totalAmount);
+  //       totalAmount -= coinsToUse;
+  //     }
+
   //     const { data } = await axios.post("/api/v1/products/braintree/payment", {
   //       nonce,
   //       cart,
+  //       totalAmount,
+  //       useCoins,
   //     });
+
   //     setLoading(false);
-  //     localStorage.removeItem("cart");
   //     setCart([]);
+  //     localStorage.removeItem("cart");
   //     navigate("/dashboard/user/orders");
+
   //     toast.success("Payment Completed Successfully ");
+
+  //     // Reset userCoins to 0 after using them
+  //     if (useCoins) {
+  //       setUserCoins(0);
+  //     }
   //   } catch (error) {
   //     console.log(error);
   //     setLoading(false);
   //   }
   // };
 
-  // Handle payments
   const handlePayment = async () => {
     try {
       setLoading(true);
       const { nonce } = await instance.requestPaymentMethod();
-      // const totalAmount = totalPrice(); // Calculate total amount spent
-      const totalAmount = cart.reduce((total, item) => total + item.price, 0); // Calculate total amount
+      let totalAmount = cart.reduce((total, item) => total + item.price, 0);
+
+      // Apply discount if user wants to use coins
+      let coinsToUse = 0;
+      if (useCoins && userCoins >= 100) {
+        coinsToUse = Math.min(userCoins, totalAmount);
+        totalAmount -= coinsToUse;
+      }
+
       const { data } = await axios.post("/api/v1/products/braintree/payment", {
         nonce,
         cart,
-        totalAmount, // Pass total amount spent to the backend
+        totalAmount,
+        useCoins,
       });
+
       setLoading(false);
-      localStorage.removeItem("cart");
       setCart([]);
+      localStorage.removeItem("cart");
       navigate("/dashboard/user/orders");
-      toast.success("Payment Completed Successfully ");
+
+      toast.success("Payment Completed Successfully");
+
+      // Reset userCoins to 0 after using them
+      if (useCoins) {
+        setUserCoins(0);
+      }
     } catch (error) {
       console.log(error);
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    getToken();
+    if (auth?.user) {
+      getUserCoins();
+    }
+  }, [auth?.token]);
+
   return (
     <Layout>
-      <div className=" cart-page">
+      <div className="cart-page">
         <div className="row">
-          <div className="col-md-12">
-            <h1 className="text-center bg-light p-2 mb-1">
-              {!auth?.user
-                ? "Hello Guest"
-                : `Hello  ${auth?.token && auth?.user?.name}`}
+          <div className="col-md-12 cart-card">
+            <h1 className="text-center heading p-2 mb-1">
+              {!auth?.user ? "Hello Guest" : `Hello ${auth?.user?.name}`}
               <p className="text-center">
                 {cart?.length
-                  ? `You Have ${cart.length} items in your cart ${
-                      auth?.token ? "" : "please login to checkout !"
-                    }`
-                  : " Your Cart Is Empty"}
+                  ? `You have ${cart.length} items in your cart`
+                  : "Your Cart is Empty"}
               </p>
             </h1>
           </div>
         </div>
-        <div className="container ">
-          <div className="row ">
-            <div className="col-md-6  p-0 m-0">
-              {cart?.map((p) => (
-                <div className="row card flex-row" key={p._id}>
-                  <div className="col-md-4">
-                    <img
-                      src={`/api/v1/products/product-photo/${p._id}`}
-                      className="card-img-top"
-                      alt={p.name}
-                      width="100%"
-                      height={"130px"}
-                    />
+        <div className="container">
+          <div className="row">
+            <div className="col-md-6 p-0 m-0">
+              {uniqueProductIds.map((productId) => {
+                const product = cart.find((item) => item._id === productId);
+                return (
+                  <div className="row card flex-row" key={productId}>
+                    <div className="col-md-4">
+                      <img
+                        src={`/api/v1/products/product-photo/${productId}`}
+                        className="card-img-top"
+                        alt={product.name}
+                        width="100%"
+                        height="130px"
+                      />
+                    </div>
+                    <div className="col-md-4">
+                      <p>{product.name}</p>
+                      {product.description && (
+                        <p>{product.description.substring(0, 30)}</p>
+                      )}
+                      <p>Price: {product.price}</p>
+                      <p>Quantity: {calculateQuantity(productId)}</p>
+                    </div>
+                    <div className="col-md-4 cart-remove-btn">
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => removeCartItem(productId)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
-                  <div className="col-md-4">
-                    <p>{p.name}</p>
-                    <p>{p.description.substring(0, 30)}</p>
-                    <p>Price : {p.price}</p>
-                  </div>
-                  <div className="col-md-4 cart-remove-btn">
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => removeCartItem(p._id)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-            <div className="col-md-5 cart-summary ">
+            <div className="col-md-5 cart-summary">
               <h2>Cart Summary</h2>
               <p>Total | Checkout | Payment</p>
               <hr />
-              <h4>Total : {totalPrice()} </h4>
+              <h4>Total: {totalPrice()}</h4>
               {auth?.user?.address ? (
                 <>
                   <div className="mb-3">
@@ -202,7 +249,7 @@ const CartPage = () => {
                         })
                       }
                     >
-                      Plase Login to checkout
+                      Please Login to checkout
                     </button>
                   )}
                 </div>
@@ -221,7 +268,6 @@ const CartPage = () => {
                       }}
                       onInstance={(instance) => setInstance(instance)}
                     />
-
                     <button
                       className="btn btn-primary"
                       onClick={handlePayment}
@@ -229,6 +275,19 @@ const CartPage = () => {
                     >
                       {loading ? "Processing ...." : "Make Payment"}
                     </button>
+                    {userCoins >= 100 && (
+                      <div className="mt-3">
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={useCoins}
+                            onChange={() => setUseCoins(!useCoins)}
+                          />
+                          Use {userCoins} coins for a discount of ${userCoins}
+                        </label>
+                        <p>You have {userCoins} coins available.</p>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

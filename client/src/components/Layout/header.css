@@ -2,3 +2,16 @@
     color:orange;
     font-weight:bolder;
 }
+.my-nav{
+   background-color: aquamarine;
+}
+/* Add this to your header.css file */
+
+.sticky-header {
+    position: -webkit-sticky; /* For Safari */
+    position: sticky;
+    top: 0;
+    z-index: 1000; /* Ensure it stays on top of other elements */
+    background-color: aquamarine; /* Ensure background color matches */
+  }
+  

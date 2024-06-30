@@ -78,7 +78,7 @@ const Footer = () => {
                   href="tel:0124-64XXXX"
                   target="_self"
                 >
-                  0124-64XXXX
+                  01898-124560
                 </a>
               </p>
             </div>

@@ -4,6 +4,7 @@ import slugify from "slugify";
 import categoryModel from "../models/categoryModel.js";
 import braintree from "braintree";
 import orderModel from "../models/orderModel.js";
+import userModel from "../models/userModel.js";
 import dotenv from "dotenv";
 dotenv.config();
 //gateway
@@ -333,7 +334,7 @@ export const braintreeTokenController = async (req, res) => {
     console.log(error);
   }
 };
-//payment
+//payment actual
 
 // export const brainTreePaymentController = async (req, res) => {
 //   try {
@@ -369,44 +370,170 @@ export const braintreeTokenController = async (req, res) => {
 // };
 
 //newly added
+// export const brainTreePaymentController = async (req, res) => {
+//   try {
+//     const { nonce, cart, totalAmount } = req.body;
+
+//     let newTransaction = gateway.transaction.sale(
+//       {
+//         amount: totalAmount,
+//         paymentMethodNonce: nonce,
+//         options: {
+//           submitForSettlement: true,
+//         },
+//       },
+//       async function (error, result) {
+//         if (result) {
+//           const order = new orderModel({
+//             products: cart,
+//             payment: {
+//               amount: totalAmount, // Set the total amount here
+//               success: result.success,
+//             },
+//             buyer: req.user._id,
+//           });
+//           await order.save();
+//           res.json({ ok: true });
+//         } else {
+//           res.status(500).send(error);
+//         }
+//       }
+//     );
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send({
+//       success: false,
+//       message: "Error processing payment",
+//       error,
+//     });
+//   }
+// };
+//added for coins reseting
 export const brainTreePaymentController = async (req, res) => {
   try {
-    const { nonce, cart, totalAmount } = req.body;
+    const { nonce, cart, totalAmount, useCoins } = req.body;
 
-    let newTransaction = gateway.transaction.sale(
+    // Fetch user from the database
+    const user = await userModel.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    let finalAmount = totalAmount;
+    const coinsToUse = useCoins && user.coins >= 100 ? 100 : 0;
+
+    if (coinsToUse > 0) {
+      finalAmount -= coinsToUse;
+      user.coins = 0; // Reset user's coins after using them
+    }
+
+    // Create transaction using Braintree gateway
+    gateway.transaction.sale(
       {
-        amount: totalAmount,
+        amount: finalAmount,
         paymentMethodNonce: nonce,
         options: {
           submitForSettlement: true,
         },
       },
-      async function (error, result) {
-        if (result) {
-          const order = new orderModel({
-            products: cart,
-            payment: {
-              amount: totalAmount, // Set the total amount here
-              success: result.success,
-            },
-            buyer: req.user._id,
-          });
-          await order.save();
-          res.json({ ok: true });
-        } else {
-          res.status(500).send(error);
+      async (error, result) => {
+        if (error) {
+          return res.status(500).json({ error });
         }
+
+        // Calculate coins earned from this transaction (10 coins per 1000 spent)
+        const coinsEarned = Math.floor(finalAmount / 1000) * 10;
+
+        // Update user's coins if not using coins or after using them
+        if (coinsToUse === 0) {
+          user.coins += coinsEarned;
+        }
+
+        // Save order in database
+        const order = new orderModel({
+          products: cart,
+          payment: {
+            amount: finalAmount,
+            success: result.success,
+          },
+          buyer: req.user._id,
+          coinsUsed: coinsToUse, // Record coins used in this order
+        });
+
+        await order.save();
+        await user.save();
+
+        return res.json({ success: true });
       }
     );
   } catch (error) {
     console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Error processing payment",
-      error,
-    });
+    res.status(500).json({ error });
   }
 };
+
+// this is for use all coins latest updatee
+// export const brainTreePaymentController = async (req, res) => {
+//   try {
+//     const { nonce, cart, totalAmount, useCoins } = req.body;
+
+//     // Fetch user from the database
+//     const user = await userModel.findById(req.user._id);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+
+//     let finalAmount = totalAmount;
+//     let coinsToUse = 0;
+
+//     if (useCoins && user.coins >= 100) {
+//       coinsToUse = user.coins;
+//       finalAmount -= coinsToUse;
+//       user.coins = 0; // Reset user's coins after using them
+//     }
+
+//     // Create transaction using Braintree gateway
+//     gateway.transaction.sale(
+//       {
+//         amount: finalAmount,
+//         paymentMethodNonce: nonce,
+//         options: {
+//           submitForSettlement: true,
+//         },
+//       },
+//       async (error, result) => {
+//         if (error) {
+//           return res.status(500).json({ error });
+//         }
+
+//         // Calculate coins earned from this transaction (10 coins per 1000 spent)
+//         const coinsEarned = Math.floor(finalAmount / 1000) * 10;
+
+//         // Update user's coins
+//         user.coins += coinsEarned;
+
+//         // Save order in database
+//         const order = new orderModel({
+//           products: cart,
+//           payment: {
+//             amount: finalAmount,
+//             success: result.success,
+//           },
+//           buyer: req.user._id,
+//           coinsUsed: coinsToUse, // Record coins used in this order
+//         });
+
+//         await order.save();
+//         await user.save();
+
+//         return res.json({ success: true });
+//       }
+//     );
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).json({ error });
+//   }
+// };
 
 //review
 
@@ -415,8 +542,22 @@ export const addReviewController = async (req, res) => {
     const { productId, rating, comment } = req.body;
     const userId = req.user._id;
 
+    if (!rating || !comment || !productId) {
+      return res.status(400).send({
+        success: false,
+        message: "Rating, comment, and product ID are required",
+      });
+    }
+
     // Find the product by ID
     const product = await productModel.findById(productId);
+
+    if (!product) {
+      return res.status(404).send({
+        success: false,
+        message: "Product not found",
+      });
+    }
 
     // Check if the user has already reviewed the product
     const existingReview = product.reviews.find(
@@ -456,6 +597,7 @@ export const addReviewController = async (req, res) => {
     });
   }
 };
+
 export const getReviewsController = async (req, res) => {
   try {
     const { productId } = req.params;

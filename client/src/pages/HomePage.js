@@ -23,6 +23,19 @@ const HomePage = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [cart, setCart] = useCart();
+  const [data, setData] = useState(null);
+  // const { cart, setCart } = useCart([]);
+  useEffect(() => {
+    fetch("https://us-central1-your-project-id.cloudfunctions.net/api/data")
+      .then((response) => response.json())
+      .then((data) => {
+        console.log(data);
+        setData(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      });
+  }, []); // Empty dependency array means this effect runs once on mount
 
   //get all category
 
@@ -128,8 +141,8 @@ const HomePage = () => {
       <HomeBanner />
       <div className="container-fluid row mt-3 home-page">
         <div className="col-md-3 filters">
-          <h4 className="text-center">Filtered By Category</h4>
-          <div className="d-flex flex-column">
+          <h4 className="text-center filter-category">Filtered By Category</h4>
+          <div className="d-flex flex-column items-category">
             {categories.map((c) => (
               <Checkbox
                 key={c._id}
@@ -141,7 +154,7 @@ const HomePage = () => {
           </div>
           {/* filtered by price */}
 
-          <h4 className="text-center mt-4">Filtered By Prices</h4>
+          <h4 className="text-center mt-4 filter-price">Filtered By Prices</h4>
           <div className="d-flex flex-column">
             <Radio.Group onChange={(e) => setRadio(e.target.value)}>
               {Prices?.map((p) => (
@@ -163,7 +176,7 @@ const HomePage = () => {
         </div>
 
         <div className="col-md-9">
-          <h1 className="text-center">All Products</h1>
+          <h2 className="text-center all-product">All Products</h2>
           <div className="d-flex flex-wrap">
             {products?.map((product) => (
               <div className="card m-2" style={{ width: "18rem;" }}>

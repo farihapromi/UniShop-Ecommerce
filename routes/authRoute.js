@@ -11,9 +11,9 @@ import {
   getUsersWithOrdersController,
   updateUserCoinsController,
   createOrderController,
+  getUserCoinsController,
 } from "../controllers/authController.js";
 import { requireSignIn, isAdmin } from "../middlewares/authMiddleware.js";
-import User from "../models/userModel.js";
 
 //router object
 const router = express.Router();
@@ -57,6 +57,9 @@ router.get(
   isAdmin,
   getUsersWithOrdersController
 );
+//newly added
+// router.get("/user-coins/:userId", getUserCoinsController);
+router.get("/user-coins", requireSignIn, getUserCoinsController);
 router.post("/update-coins", requireSignIn, isAdmin, updateUserCoinsController);
 
 // router.get(
@@ -65,29 +68,31 @@ router.post("/update-coins", requireSignIn, isAdmin, updateUserCoinsController);
 //   // isAdmin,
 //   getUsersWithOrdersController
 // );
-router.post("/assign-membership", requireSignIn, isAdmin, async (req, res) => {
-  try {
-    const { userId, membershipId } = req.body;
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    user.membershipId = membershipId;
-    await user.save();
-    res.status(200).json({ success: true, message: "Membership ID assigned" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// router.post("/assign-membership", requireSignIn, isAdmin, async (req, res) => {
+//   try {
+//     const { userId, membershipId } = req.body;
+//     const user = await User.findById(userId);
+//     if (!user) {
+//       return res.status(404).json({ message: "User not found" });
+//     }
+//     user.membershipId = membershipId;
+//     await user.save();
+//     res.status(200).json({ success: true, message: "Membership ID assigned" });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
 
-router.get("/users", requireSignIn, async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.status(200).json(users);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// router.get("/users", requireSignIn, async (req, res) => {
+//   try {
+//     const users = await User.find({});
+//     res.status(200).json(users);
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// });
 router.post("/create-order", requireSignIn, createOrderController);
+//newly added
+// router.post("/handle-payment", handlePaymentController);
 
 export default router;
